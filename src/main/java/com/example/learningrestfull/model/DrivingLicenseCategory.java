@@ -1,6 +1,6 @@
 package com.example.learningrestfull.model;
 
-public enum DrivingLicenseСategory {
+public enum DrivingLicenseCategory {
     A,
     B,
     C,
