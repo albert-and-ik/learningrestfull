@@ -31,8 +31,8 @@ public class CarEntity {
     @Enumerated(EnumType.STRING)
     public StatusCar status;
 
-    @ManyToOne
-    @Column(name = "owner")
-    public CarEntity owner;
+    @ManyToOne(optional = false, fetch = FetchType.LAZY, targetEntity = CarEntity.class)
+    @JoinColumn(name = "owner")
+    public DriverEntity owner;
 }
 

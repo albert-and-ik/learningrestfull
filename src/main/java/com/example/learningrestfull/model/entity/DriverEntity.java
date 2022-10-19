@@ -8,6 +8,7 @@ import com.example.learningrestfull.model.DrivingLicenseCategory;
 import lombok.Getter;
 import lombok.Setter;
 
+@Entity
 @Table(name="driver")
 @Getter
 @Setter
@@ -28,4 +29,5 @@ public class DriverEntity {
     @Enumerated(EnumType.STRING)
     @Column(name="driver_lic")
     public DrivingLicenseCategory driverLicenseCategory;
+
 }
