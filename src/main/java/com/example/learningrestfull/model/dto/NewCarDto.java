@@ -1,10 +1,14 @@
 package com.example.learningrestfull.model.dto;
 
+import lombok.Data;
+
 import java.util.UUID;
 
+@Data
 public class NewCarDto {
-    public String model;
-    public String vin;
-    public int mileage;
-    public UUID owner;
+    String govNumber;
+    UUID owner;
+    String model;
+    String vin;
+    int mileage;
 }

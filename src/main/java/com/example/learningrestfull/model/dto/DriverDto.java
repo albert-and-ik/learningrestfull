@@ -1,10 +1,15 @@
 package com.example.learningrestfull.model.dto;
 
+import lombok.Data;
+import lombok.EqualsAndHashCode;
+
 import java.time.OffsetDateTime;
 import java.util.List;
 
+@Data
+@EqualsAndHashCode(callSuper = true)
 public class DriverDto extends DriverShortDto {
-    public int age;
-    public List<CarDto> cars;
-    public OffsetDateTime creating;
+    int age;
+    List<CarDto> cars;
+    OffsetDateTime creating;
 }

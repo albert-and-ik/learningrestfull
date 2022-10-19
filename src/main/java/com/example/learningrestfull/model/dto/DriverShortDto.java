@@ -1,13 +1,15 @@
 package com.example.learningrestfull.model.dto;
 
 import com.example.learningrestfull.model.*;
+import lombok.Data;
 
 import java.util.UUID;
 
+@Data
 public class DriverShortDto {
-    public UUID uuid;
-    public String name;
-    public DrivingLicenseCategory driverLic;
+    UUID uuid;
+    String name;
+    DrivingLicenseCategory driverLic;
 }
 
 
