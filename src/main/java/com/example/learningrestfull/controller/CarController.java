@@ -10,6 +10,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import javax.validation.Valid;
+import javax.validation.constraints.NotNull;
 import java.util.List;
 import java.util.UUID;
 
@@ -24,12 +26,12 @@ public class CarController {
 
     @RequestMapping(value = "/{uuid}", method = RequestMethod.GET, produces = APPLICATION_JSON_VALUE)
     @ResponseBody
-    public ResponseEntity<CarDto> getById(@PathVariable(value = "uuid") UUID uuid) {
-        var dto = carService.getByUuid(uuid);
+    public ResponseEntity<CarDto> getById(@PathVariable(value = "uuid") String uuid) {
+        var dto = carService.getByUuid(UUID.fromString( uuid));
 
-        return dto == null
+        return dto.isEmpty()
                 ? new ResponseEntity<>(HttpStatus.NOT_FOUND)
-                : new ResponseEntity<>(dto, HttpStatus.OK);
+                : new ResponseEntity<>(dto.get(), HttpStatus.OK);
     }
 
     @RequestMapping(value = "/list", method = RequestMethod.GET, produces = APPLICATION_JSON_VALUE)
@@ -42,23 +44,22 @@ public class CarController {
 
     @RequestMapping(method = RequestMethod.POST, consumes = APPLICATION_JSON_VALUE, produces = APPLICATION_JSON_VALUE)
     @ResponseBody
-    public ResponseEntity<UUID> create(@RequestBody NewCarDto dto) {
+    public ResponseEntity<UUID> create(@RequestBody @Valid NewCarDto dto) {
         var savedCar =  carService.create(dto);
 
-        return savedCar==null
+        var uuidOptional =  savedCar.map(CarDto::getUuid);
+
+        return uuidOptional.isEmpty()
                 ? new ResponseEntity<>(HttpStatus.BAD_REQUEST)
-                : new ResponseEntity<>(savedCar.getUuid(), HttpStatus.CREATED);
+                : new ResponseEntity<>(uuidOptional.get(), HttpStatus.CREATED);
     }
 
     @RequestMapping(value="/{uuid}", method = RequestMethod.PATCH)
-    public ResponseEntity<?> updateStatus(UUID uuid, @RequestParam StatusCar status){
-        if (status == null) {
-            return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
-        }
+    public ResponseEntity<?> updateStatus(
+            @PathVariable String uuid,
+            @RequestParam @NotNull StatusCar status){
 
-        var success = carService.changeStatus(uuid, status);
-
-        return success
+        return carService.changeStatus(UUID.fromString(uuid), status)
                 ? new ResponseEntity<>(HttpStatus.OK)
                 : new ResponseEntity<>(HttpStatus.BAD_REQUEST);
     }

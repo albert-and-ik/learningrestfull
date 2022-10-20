@@ -9,7 +9,7 @@ import java.util.UUID;
 public class DriverShortDto {
     UUID uuid;
     String name;
-    DrivingLicenseCategory driverLic;
+    DrivingLicenseCategory driverLicenseCategory;
 }
 
 

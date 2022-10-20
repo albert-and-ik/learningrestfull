@@ -1,11 +1,14 @@
 package com.example.learningrestfull.model.entity;
 
 import com.example.learningrestfull.model.StatusCar;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.Getter;
 import lombok.Setter;
+import org.hibernate.annotations.GenericGenerator;
 
 
 import javax.persistence.*;
+import java.time.OffsetDateTime;
 import java.util.UUID;
 
 @Entity
@@ -15,7 +18,9 @@ import java.util.UUID;
 public class CarEntity {
 
     @Id
-    @Column(name = "uuid")
+    @Column(name = "uuid", updatable = false, nullable = false)
+    @GenericGenerator(name = "UUID", strategy = "org.hibernate.id.UUIDGenerator")
+    @GeneratedValue(generator = "UUID")
     public UUID uuid;
 
     @Column(name = "model")
@@ -27,12 +32,19 @@ public class CarEntity {
     @Column(name = "mileage")
     public int mileage;
 
+    @Column(name="vin")
+    public String vin;
+
     @Column(name = "status")
     @Enumerated(EnumType.STRING)
-    public StatusCar status;
+    public StatusCar status = StatusCar.CREATED;
 
-    @ManyToOne(optional = false, fetch = FetchType.LAZY, targetEntity = CarEntity.class)
+    @Column(name = "creating")
+    public OffsetDateTime creating = OffsetDateTime.now();
+
+    @ManyToOne(optional = false, fetch = FetchType.LAZY)
     @JoinColumn(name = "owner")
+    @JsonIgnore
     public DriverEntity owner;
 }
 

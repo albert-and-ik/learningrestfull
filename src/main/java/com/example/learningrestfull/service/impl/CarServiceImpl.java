@@ -5,15 +5,16 @@ import com.example.learningrestfull.model.dto.CarDto;
 import com.example.learningrestfull.model.dto.CarShortDto;
 import com.example.learningrestfull.model.dto.NewCarDto;
 import com.example.learningrestfull.model.entity.CarEntity;
-import com.example.learningrestfull.repository.CarReposiroty;
+import com.example.learningrestfull.repository.CarRepository;
+import com.example.learningrestfull.repository.DriverRepository;
 import com.example.learningrestfull.service.CarService;
 import lombok.RequiredArgsConstructor;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.annotation.Bean;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -22,61 +23,66 @@ import java.util.stream.Collectors;
 public class CarServiceImpl implements CarService {
 
     @Autowired
-    CarReposiroty carReposiroty;
+    CarRepository carRepository;
+
+    @Autowired
+    DriverRepository driverRepository;
+
+    @Autowired
+    ModelMapper modelMapper;
 
 
     @Override
     public List<CarShortDto> getAll() {
-        List<CarEntity> carEntities =  carReposiroty.findAll();
+        List<CarEntity> carEntities = carRepository.findAll();
 
         return carEntities
                 .stream()
-                .map(ce -> modelMapper().map(ce,CarShortDto.class))
+                .map(ce -> modelMapper.map(ce, CarShortDto.class))
                 .collect(Collectors.toList());
     }
 
     @Override
-    public CarDto getByUuid(UUID uuid) {
-        try {
-            CarEntity carEntity = carReposiroty.getReferenceById(uuid);
+    public Optional<CarDto> getByUuid(UUID uuid) {
+        var carEntityOpt = carRepository.findById(uuid);
 
-            return modelMapper().map(carEntity, CarDto.class);
-
-        } catch (Exception e) {
-            return null;
-        }
-
+        return carEntityOpt.map(carEntity -> modelMapper.map(carEntity, CarDto.class));
     }
 
     @Override
-    public CarDto create(NewCarDto car) {
-        var carEntity =  modelMapper().map(car, CarEntity.class);
-        carEntity.setUuid(UUID.randomUUID());
+    public Optional<CarDto> create(NewCarDto car) {
 
-        var carInDb =  carReposiroty.saveAndFlush(carEntity);
+        var ownerOptional = driverRepository.findById(car.getOwner());
 
-        return modelMapper().map(carInDb, CarDto.class);
+        if (ownerOptional.isEmpty()) {
+            return Optional.empty();
+        }
+
+        var carEntity = modelMapper.map(car, CarEntity.class);
+
+//        carEntity.status = StatusCar.CREATED;
+//        carEntity.setCreating(OffsetDateTime.now());
+        carEntity.setOwner(ownerOptional.get());
+
+        var carInDb = carRepository.saveAndFlush(carEntity);
+
+        return Optional.of(modelMapper.map(carInDb, CarDto.class));
     }
 
     @Override
     public boolean changeStatus(UUID uuid, StatusCar status) {
-
-        try {
-            var carEntity = carReposiroty.getReferenceById(uuid);
-
-            carEntity.setStatus(status);
-
-            carReposiroty.saveAndFlush(carEntity);
-
-            return true;
-        } catch (Exception e) {
+        if (status == StatusCar.CREATED) {
             return false;
         }
+
+        var carEntityOptional = carRepository.findById(uuid);
+
+        carEntityOptional.ifPresent(car -> {
+            car.setStatus(status);
+            carRepository.saveAndFlush(car);
+        });
+
+        return carEntityOptional.isPresent();
     }
 
-
-    @Bean
-    private ModelMapper modelMapper(){
-        return new ModelMapper();
-    }
 }
