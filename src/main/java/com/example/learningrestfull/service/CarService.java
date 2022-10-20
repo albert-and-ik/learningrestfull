@@ -7,15 +7,16 @@ import com.example.learningrestfull.model.dto.NewCarDto;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 @Service
 public interface CarService {
 
     List<CarShortDto> getAll();
-    CarDto getByUuid(UUID uuid);
+    Optional<CarDto> getByUuid(UUID uuid);
 
-    CarDto create(NewCarDto car);
+    Optional<CarDto> create(NewCarDto car);
 
     boolean changeStatus(UUID uuid, StatusCar status);
 }

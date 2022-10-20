@@ -6,13 +6,14 @@ import com.example.learningrestfull.model.dto.NewDriverDto;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 @Service
 public interface DriverService {
     List<DriverShortDto> getAll();
 
-    DriverDto getByUuid(UUID uuid);
+    Optional<DriverDto> getByUuid(UUID uuid);
 
-    DriverDto create(NewDriverDto driver);
+    Optional<DriverDto> create(NewDriverDto driver);
 }
