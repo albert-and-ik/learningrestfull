@@ -16,7 +16,7 @@ public class SwaggerConfiguration {
     public Docket SwaggerAip(){
         return new Docket(DocumentationType.SWAGGER_2)
                 .select()
-                .apis(RequestHandlerSelectors.any())
+                .apis(RequestHandlerSelectors.basePackage("com.example.learningrestfull.controller"))
                 .paths(PathSelectors.any())
                 .build();
     }
