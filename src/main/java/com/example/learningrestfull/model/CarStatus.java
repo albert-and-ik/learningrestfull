@@ -1,5 +1,5 @@
 package com.example.learningrestfull.model;
 
-public enum StatusCar {
+public enum CarStatus {
     CREATED, SOLD, DISCARDED
 }
