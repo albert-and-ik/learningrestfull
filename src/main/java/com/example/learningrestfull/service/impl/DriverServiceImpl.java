@@ -1,56 +1,65 @@
 package com.example.learningrestfull.service.impl;
 
+import com.example.learningrestfull.mapper.DriverMapper;
 import com.example.learningrestfull.model.dto.DriverDto;
 import com.example.learningrestfull.model.dto.DriverShortDto;
 import com.example.learningrestfull.model.dto.NewDriverDto;
-import com.example.learningrestfull.model.entity.DriverEntity;
 import com.example.learningrestfull.repository.DriverRepository;
 import com.example.learningrestfull.service.DriverService;
 import lombok.RequiredArgsConstructor;
-import org.modelmapper.ModelMapper;
-import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
-import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
-import java.util.stream.Collectors;
 
 
 @Service
 @RequiredArgsConstructor
 public class DriverServiceImpl implements DriverService {
-    @Autowired
-    DriverRepository driverRepository;
-    @Autowired
-    ModelMapper modelMapper;
+
+    final DriverRepository driverRepository;
 
     @Override
+    @Transactional
+    public Optional<DriverDto> getByUuid(UUID uuid) {
+        return driverRepository
+                .findById(uuid)
+                .map(DriverMapper.MAPPER::toDto);
+    }
+
+    @Override
+    @Transactional
     public List<DriverShortDto> getAll() {
         return driverRepository
                 .findAll()
                 .stream()
-                .map(entity -> modelMapper.map(entity, DriverShortDto.class))
-                .collect(Collectors.toList());
+                .map(DriverMapper.MAPPER::toShortDto)
+                .toList();
     }
 
     @Override
-    public Optional<DriverDto> getByUuid(UUID uuid) {
+    @Transactional
+    public Page<DriverShortDto> getPage(Pageable pageable) {
         return driverRepository
-                .findById(uuid)
-                .map(e->modelMapper.map(e,DriverDto.class));
+                .findAll(pageable)
+                .map(DriverMapper.MAPPER::toShortDto);
+    }
+
+
+    @Override
+    @Transactional
+    public UUID create(NewDriverDto driver) {
+        return driverRepository
+                .save(DriverMapper.MAPPER.toEntity(driver))
+                .getUuid();
     }
 
     @Override
-    public Optional<DriverDto> create(NewDriverDto driver) {
-        var driverEntity = modelMapper.map(driver, DriverEntity.class);
-
-        driverEntity.setUuid(UUID.randomUUID());
-        driverEntity.setCreating(OffsetDateTime.now());
-
-        var driverInDb = driverRepository.saveAndFlush(driverEntity);
-
-        return Optional.ofNullable(modelMapper.map(driverInDb, DriverDto.class));
+    public void softDelete(UUID uuid) {
+        driverRepository.softDelete(uuid);
     }
 }
