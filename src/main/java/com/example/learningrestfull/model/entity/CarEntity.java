@@ -1,50 +1,39 @@
 package com.example.learningrestfull.model.entity;
 
-import com.example.learningrestfull.model.StatusCar;
+import com.example.learningrestfull.model.CarStatus;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.Getter;
 import lombok.Setter;
-import org.hibernate.annotations.GenericGenerator;
-
+import org.hibernate.annotations.Where;
 
 import javax.persistence.*;
-import java.time.OffsetDateTime;
-import java.util.UUID;
 
 @Entity
 @Table(name="car")
+@Where(clause = "deleted_at is null")
 @Getter
 @Setter
-public class CarEntity {
+public class CarEntity extends BaseEntity {
 
-    @Id
-    @Column(name = "uuid", updatable = false, nullable = false)
-    @GenericGenerator(name = "UUID", strategy = "org.hibernate.id.UUIDGenerator")
-    @GeneratedValue(generator = "UUID")
-    public UUID uuid;
+    @Column(nullable = false)
+    String model;
 
-    @Column(name = "model")
-    public String model;
+    @Column(nullable = false)
+    String govNumber;
 
-    @Column(name="gov_number")
-    public String govNumber;
+    @Column(nullable = false)
+    int mileage;
 
-    @Column(name = "mileage")
-    public int mileage;
+    @Column(nullable = false)
+    String vin;
 
-    @Column(name="vin")
-    public String vin;
-
-    @Column(name = "status")
+    @Column(nullable = false)
     @Enumerated(EnumType.STRING)
-    public StatusCar status = StatusCar.CREATED;
-
-    @Column(name = "creating")
-    public OffsetDateTime creating = OffsetDateTime.now();
+    CarStatus status = CarStatus.CREATED;
 
     @ManyToOne(optional = false, fetch = FetchType.LAZY)
     @JoinColumn(name = "owner")
     @JsonIgnore
-    public DriverEntity owner;
+    DriverEntity owner;
 }
 
