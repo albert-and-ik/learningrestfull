@@ -4,6 +4,6 @@ import com.example.learningrestfull.model.entity.CarEntity;
 import org.springframework.stereotype.Repository;
 
 @Repository
-public interface CarRepository extends BaseRepository<CarEntity> {
+public interface CarRepository extends BaseEntityRepository<CarEntity> {
 
 }
