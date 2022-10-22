@@ -4,51 +4,99 @@ import com.example.learningrestfull.model.dto.DriverDto;
 import com.example.learningrestfull.model.dto.DriverShortDto;
 import com.example.learningrestfull.model.dto.NewDriverDto;
 import com.example.learningrestfull.service.DriverService;
-import org.springframework.beans.factory.annotation.Autowired;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import lombok.AllArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import javax.validation.Valid;
 import java.util.List;
 import java.util.UUID;
 
-import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
 
 @RestController
 @RequestMapping("/drivers")
+@AllArgsConstructor
+@Tag(name = "Водители")
 public class DriverController {
+    final DriverService driverService;
 
-    @Autowired
-    DriverService driverService;
+    @GetMapping
+    @ResponseStatus(HttpStatus.OK)
+    @Operation(summary = "Получить часть списка",
+            description = "Получение страницы из всего спика",
+            tags = {"Водители"})
+    public Page<DriverShortDto> getPage(
+            @RequestParam(defaultValue = "0")
+            @Parameter(description = "Страница")
+            int page,
+            @RequestParam(defaultValue = "10")
+            @Parameter(description = "Количество записей на странице")
+            int size,
+            @RequestParam(defaultValue = "name")
+            @Parameter(description = "Сортироват по полю")
+            String sortBy
 
-    @RequestMapping(value = "/{uuid}", method = RequestMethod.GET, produces = APPLICATION_JSON_VALUE)
-    @ResponseBody
-    public ResponseEntity<DriverDto> getById(@PathVariable(value = "uuid") String uuid) {
-        var dto = driverService.getByUuid(UUID.fromString(uuid));
-
-        return dto.isEmpty()
-                ? new ResponseEntity<>(HttpStatus.NOT_FOUND)
-                : new ResponseEntity<>(dto.get(), HttpStatus.OK);
+    ) {
+        return driverService.getPage(PageRequest.of(page, size, Sort.by(sortBy)));
     }
 
-    @RequestMapping(value = "/list", method = RequestMethod.GET, produces = APPLICATION_JSON_VALUE)
-    @ResponseBody
-    public ResponseEntity<List<DriverShortDto>> getAll(){
-        var listDrivers = driverService.getAll();
-
-        return new ResponseEntity<>(listDrivers, HttpStatus.OK);
+    @GetMapping("/list")
+    @ResponseStatus(HttpStatus.OK)
+    @Operation(summary = "Список всех водителей",
+            description = "Позволяет получить весь список водителей",
+            tags = {"Водители"})
+    public List<DriverShortDto> getAll() {
+        return driverService.getAll();
     }
 
-    @RequestMapping(method = RequestMethod.POST, consumes = APPLICATION_JSON_VALUE, produces = APPLICATION_JSON_VALUE)
-    @ResponseBody
-    public ResponseEntity<UUID> create(@RequestBody @Valid NewDriverDto dto) {
-        var savedDriver =  driverService.create(dto);
+    @GetMapping("/{uuid}")
+    @ResponseStatus(HttpStatus.OK)
+    @Operation(summary = "Поиск водителя по UUID",
+            description = "Поиск в базе данных водителя у которого совпадает UUID",
+            tags = {"Водители"})
+    public DriverDto getById(
+            @PathVariable
+            @Parameter(description = "Уникальный идентификацоинный ID", required = true)
+            UUID uuid
+    ) {
+        return driverService
+                .getByUuid(uuid)
+                .orElseThrow();
+    }
 
-        var uuid = savedDriver.map(DriverDto::getUuid);
+    @PostMapping
+    @ResponseStatus(HttpStatus.CREATED)
+    @Operation(summary = "Создание водителя",
+            description = "Запись водителя в базу данных",
+            responses = {@ApiResponse(description = "Уникальный номер созданного водителя")},
+            tags = {"Водители"})
+    public UUID create(
+            @RequestBody
+            @Valid
+            @Parameter(description = "Представление водителя", required = true)
+            NewDriverDto dto
+    ) {
+        return driverService.create(dto);
+    }
 
-        return uuid.isEmpty()
-                ? new ResponseEntity<>(HttpStatus.BAD_REQUEST)
-                : new ResponseEntity<>(uuid.get(), HttpStatus.CREATED);
+    @DeleteMapping("/{uuid}")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    @Operation(summary = "Удаление водителя по UUID",
+            description = "Удаление водителя у которого совпадает UUID",
+            tags = {"Водители"})
+    public HttpStatus softDelete(
+            @PathVariable
+            @Parameter(description = "Уникальный номер водителя", required = true)
+            UUID uuid
+    ) {
+        driverService.softDelete(uuid);
+        return HttpStatus.NO_CONTENT;
     }
 }
