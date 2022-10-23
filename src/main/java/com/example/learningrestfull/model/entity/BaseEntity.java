@@ -6,7 +6,10 @@ import org.hibernate.annotations.GenericGenerator;
 import org.hibernate.annotations.Where;
 import org.springframework.lang.Nullable;
 
-import javax.persistence.*;
+import javax.persistence.Column;
+import javax.persistence.GeneratedValue;
+import javax.persistence.Id;
+import javax.persistence.MappedSuperclass;
 import javax.validation.constraints.NotNull;
 import java.time.OffsetDateTime;
 import java.util.UUID;
