@@ -23,7 +23,7 @@ import java.util.UUID;
 @RestController
 @RequestMapping("/drivers")
 @AllArgsConstructor
-@Tag(name = "Водители")
+@Tag(name = "Водители",  description = "API для работы с водителями")
 public class DriverController {
     final DriverService driverService;
 
@@ -50,7 +50,7 @@ public class DriverController {
     @GetMapping("/list")
     @ResponseStatus(HttpStatus.OK)
     @Operation(summary = "Список всех водителей",
-            description = "Позволяет получить весь список водителей",
+            description = "Возращает весь список водителей хранящийся в базе",
             tags = {"Водители"})
     public List<DriverShortDto> getAll() {
         return driverService.getAll();
@@ -80,7 +80,7 @@ public class DriverController {
     public UUID create(
             @RequestBody
             @Valid
-            @Parameter(description = "Представление водителя", required = true)
+            @Parameter(description = "Представление водителя")
             NewDriverDto dto
     ) {
         return driverService.create(dto);
@@ -93,7 +93,7 @@ public class DriverController {
             tags = {"Водители"})
     public HttpStatus softDelete(
             @PathVariable
-            @Parameter(description = "Уникальный номер водителя", required = true)
+            @Parameter(description = "Уникальный номер водителя")
             UUID uuid
     ) {
         driverService.softDelete(uuid);
