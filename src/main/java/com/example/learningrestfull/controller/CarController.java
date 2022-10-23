@@ -1,66 +1,118 @@
 package com.example.learningrestfull.controller;
 
-import com.example.learningrestfull.model.StatusCar;
+import com.example.learningrestfull.model.CarStatus;
 import com.example.learningrestfull.model.dto.CarDto;
 import com.example.learningrestfull.model.dto.CarShortDto;
 import com.example.learningrestfull.model.dto.NewCarDto;
 import com.example.learningrestfull.service.CarService;
-import org.springframework.beans.factory.annotation.Autowired;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import lombok.AllArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import javax.validation.Valid;
-import javax.validation.constraints.NotNull;
 import java.util.List;
 import java.util.UUID;
 
-import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
-
+@Tag(name = "Автомобили", description = "API для работы с атомобилями")
 @RestController
+@AllArgsConstructor
 @RequestMapping("/cars")
 public class CarController {
+    final CarService carService;
 
-    @Autowired
-    CarService carService;
-
-    @RequestMapping(value = "/{uuid}", method = RequestMethod.GET, produces = APPLICATION_JSON_VALUE)
-    @ResponseBody
-    public ResponseEntity<CarDto> getById(@PathVariable(value = "uuid") String uuid) {
-        var dto = carService.getByUuid(UUID.fromString( uuid));
-
-        return dto.isEmpty()
-                ? new ResponseEntity<>(HttpStatus.NOT_FOUND)
-                : new ResponseEntity<>(dto.get(), HttpStatus.OK);
+    @GetMapping("/{uuid}")
+    @ResponseStatus(HttpStatus.OK)
+    @Operation(summary = "Получение автомобиля по UUID",
+            description = "Получение автомобиля по уникальному номер UUID",
+            tags = {"Автомобили"})
+    public CarDto getById(
+            @Parameter(description = "Уникальный номер автомобиля в базе данных")
+            @PathVariable(value = "uuid")
+            UUID uuid
+    ) {
+        return carService
+                .getByUuid(uuid)
+                .orElseThrow();
     }
 
-    @RequestMapping(value = "/list", method = RequestMethod.GET, produces = APPLICATION_JSON_VALUE)
-    @ResponseBody
-    public ResponseEntity<List<CarShortDto>> getAll(){
-        var listCars = carService.getAll();
-
-        return new ResponseEntity<>(listCars, HttpStatus.OK);
+    @GetMapping("/list")
+    @ResponseStatus(HttpStatus.OK)
+    @Operation(summary = "Получить весь список автомобилей",
+            description = "Возращает весь список автомобилей хранящийся в базе",
+            tags = {"Автомобили"})
+    public List<CarShortDto> getAll() {
+        return carService.getAll();
     }
 
-    @RequestMapping(method = RequestMethod.POST, consumes = APPLICATION_JSON_VALUE, produces = APPLICATION_JSON_VALUE)
-    @ResponseBody
-    public ResponseEntity<UUID> create(@RequestBody @Valid NewCarDto dto) {
-        var savedCar =  carService.create(dto);
-
-        var uuidOptional =  savedCar.map(CarDto::getUuid);
-
-        return uuidOptional.isEmpty()
-                ? new ResponseEntity<>(HttpStatus.BAD_REQUEST)
-                : new ResponseEntity<>(uuidOptional.get(), HttpStatus.CREATED);
+    @PostMapping
+    @ResponseStatus(HttpStatus.CREATED)
+    @Operation(summary = "Создание автомобиля",
+            description = "Запись автомобиля в базу данных",
+            responses = {@ApiResponse(description = "Уникальный номер созданного автомобиля")},
+            tags = {"Автомобили"})
+    public UUID create(
+            @RequestBody
+            @Valid
+            @Parameter(description = "Модель для записи автомобиля")
+            NewCarDto dto
+    ) {
+        return carService.create(dto);
     }
 
-    @RequestMapping(value="/{uuid}", method = RequestMethod.PATCH)
-    public ResponseEntity<?> updateStatus(
-            @PathVariable String uuid,
-            @RequestParam @NotNull StatusCar status){
+    @PatchMapping("/{uuid}")
+    @Operation(summary = "Обновить статус автомобиля",
+            description = "Обновить статус автомобиля в базе данных",
+            responses = {@ApiResponse(description = "Если успешно true, иначе false")},
+            tags = {"Автомобили"})
+    public boolean updateStatus(
+            @PathVariable
+            @Parameter(description = "Уникальный номер в базе данных")
+            UUID uuid,
+            @RequestParam
+            @Parameter(description = "Новый статус")
+            CarStatus status
+    ) {
+        return carService.changeStatus(uuid, status);
+    }
 
-        return carService.changeStatus(UUID.fromString(uuid), status)
-                ? new ResponseEntity<>(HttpStatus.OK)
-                : new ResponseEntity<>(HttpStatus.BAD_REQUEST);
+    @DeleteMapping("/{uuid}")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    @Operation(summary = "Удаление автомобиля по UUID",
+            description = "Удаление автомобиля у которого совпадает UUID",
+            tags = {"Автомобили"})
+    public HttpStatus softDelete(
+            @PathVariable
+            @Parameter(description = "Уникальный номер автомобиля")
+            UUID uuid
+    ) {
+        carService.softDelete(uuid);
+        return HttpStatus.NO_CONTENT;
+    }
+
+    @GetMapping
+    @ResponseStatus(HttpStatus.OK)
+    @Operation(summary = "Получить часть списка",
+            description = "Получение страницы из всего спика",
+            tags = {"Автомобили"})
+    public Page<CarShortDto> getPage(
+            @RequestParam(defaultValue = "0")
+            @Parameter(description = "Страница")
+            int page,
+            @RequestParam(defaultValue = "10")
+            @Parameter(description = "Количество записей на странице")
+            int size,
+            @RequestParam(defaultValue = "name")
+            @Parameter(description = "Сортироват по полю")
+            String sortBy
+
+    ) {
+        return carService.getPage(PageRequest.of(page, size, Sort.by(sortBy)));
     }
 }
