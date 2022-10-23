@@ -1,88 +1,94 @@
 package com.example.learningrestfull.service.impl;
 
-import com.example.learningrestfull.model.StatusCar;
+import com.example.learningrestfull.mapper.CarMapper;
+import com.example.learningrestfull.model.CarStatus;
 import com.example.learningrestfull.model.dto.CarDto;
 import com.example.learningrestfull.model.dto.CarShortDto;
 import com.example.learningrestfull.model.dto.NewCarDto;
-import com.example.learningrestfull.model.entity.CarEntity;
+import com.example.learningrestfull.model.entity.DriverEntity;
 import com.example.learningrestfull.repository.CarRepository;
 import com.example.learningrestfull.repository.DriverRepository;
 import com.example.learningrestfull.service.CarService;
 import lombok.RequiredArgsConstructor;
-import org.modelmapper.ModelMapper;
-import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
-import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
 public class CarServiceImpl implements CarService {
 
-    @Autowired
-    CarRepository carRepository;
-
-    @Autowired
-    DriverRepository driverRepository;
-
-    @Autowired
-    ModelMapper modelMapper;
-
+    final CarRepository carRepository;
+    final DriverRepository driverRepository;
 
     @Override
+    @Transactional
     public List<CarShortDto> getAll() {
-        List<CarEntity> carEntities = carRepository.findAll();
-
-        return carEntities
+        return carRepository
+                .findAll()
                 .stream()
-                .map(ce -> modelMapper.map(ce, CarShortDto.class))
-                .collect(Collectors.toList());
+                .map(CarMapper.MAPPER::toShortDto)
+                .toList();
     }
 
     @Override
+    @Transactional
+    public Page<CarShortDto> getPage(Pageable pageable) {
+        return carRepository
+                .findAll(pageable)
+                .map(CarMapper.MAPPER::toShortDto);
+    }
+
+    @Override
+    @Transactional
     public Optional<CarDto> getByUuid(UUID uuid) {
-        var carEntityOpt = carRepository.findById(uuid);
-
-        return carEntityOpt.map(carEntity -> modelMapper.map(carEntity, CarDto.class));
+        return carRepository
+                .findById(uuid)
+                .map(CarMapper.MAPPER::toDto);
     }
 
     @Override
-    public Optional<CarDto> create(NewCarDto car) {
+    @Transactional
+    public UUID create(NewCarDto car) {
 
-        var ownerOptional = driverRepository.findById(car.getOwner());
+        var carEntity = CarMapper.MAPPER.toEntity(car);
 
-        if (ownerOptional.isEmpty()) {
-            return Optional.empty();
-        }
+        var owner = new DriverEntity();
+        owner.setUuid(car.getOwner());
 
-        var carEntity = modelMapper.map(car, CarEntity.class);
+        carEntity.setOwner(owner);
 
-//        carEntity.status = StatusCar.CREATED;
-//        carEntity.setCreating(OffsetDateTime.now());
-        carEntity.setOwner(ownerOptional.get());
-
-        var carInDb = carRepository.saveAndFlush(carEntity);
-
-        return Optional.of(modelMapper.map(carInDb, CarDto.class));
+        return carRepository
+                .save(carEntity)
+                .getUuid();
     }
 
     @Override
-    public boolean changeStatus(UUID uuid, StatusCar status) {
-        if (status == StatusCar.CREATED) {
+    @Transactional
+    public boolean changeStatus(UUID uuid, CarStatus status) {
+        if(status == CarStatus.CREATED) {
             return false;
         }
 
-        var carEntityOptional = carRepository.findById(uuid);
+        carRepository
+                .findById(uuid)
+                .ifPresent(car -> {
+                    car.setStatus(status);
+                    carRepository.saveAndFlush(car);
+                });
 
-        carEntityOptional.ifPresent(car -> {
-            car.setStatus(status);
-            carRepository.saveAndFlush(car);
-        });
-
-        return carEntityOptional.isPresent();
+        return true;
     }
+
+    @Override
+    public void softDelete(UUID uuid) {
+        carRepository.softDelete(uuid);
+    }
+
 
 }
